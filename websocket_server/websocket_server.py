@@ -92,8 +92,10 @@ class WebsocketServer(ThreadingMixIn, TCPServer, API):
 	clients=[]
 	id_counter=0
 
-	def __init__(self, port, host='127.0.0.1'):
+	def __init__(self, port, host='127.0.0.1', key=None, cert=None):
 		self.port=port
+    self.key=key
+    self.cert=cert
 		TCPServer.__init__(self, (host, port), WebSocketHandler)
 
 	def _message_received_(self, handler, msg):
@@ -133,6 +135,11 @@ class WebSocketHandler(StreamRequestHandler):
 
 	def __init__(self, socket, addr, server):
 		self.server=server
+    if server.key and server.cert:
+      try:
+        socket = ssl.wrap_socket(socket, server_side=True, certfile=server.cert, keyfile=server.key)
+      except:
+        logger.warn("SSL not available (are the paths {} and {} correct for the key and cert?)".format(server.key, server.cert))
 		StreamRequestHandler.__init__(self, socket, addr, server)
 
 	def setup(self):
